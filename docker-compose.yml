@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-meu_mimo}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-meu_mimo_dev_password}
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -22,7 +22,7 @@ services:
     container_name: meu-mimo-mvp
     ports:
       - "${APP_PORT:-3000}:3000"
-      - "${ADMIN_PORT:-3001}:3000"
+      - "127.0.0.1:${ADMIN_PORT:-3001}:3000"
     env_file:
       - .env
     environment:
