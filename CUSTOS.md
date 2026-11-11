@@ -10,7 +10,7 @@ de fechar a proposta.
 | Dominio `.com.br` | R$ 40/ano | Registro.br costuma ser o caminho mais previsivel. |
 | VPS | R$ 35 a R$ 130/mes | Depende do provedor e do plano. |
 | SSL | R$ 0 | Let's Encrypt. |
-| Pagamento | taxa por venda | Mercado Pago, Pix/cartao/boleto. |
+| Pagamento | R$ 0 ou taxa por venda | Pix manual direto na conta (sem taxa) ou gateway; ver docs/GATEWAYS.md. |
 | Manutencao tecnica | R$ 250 a R$ 600/mes | Atualizacoes, backup, suporte, pequenas correcoes. |
 
 ## Recomendados
@@ -55,4 +55,4 @@ Para esse cliente, eu venderia:
 - manutencao obrigatoria inicial por 3 meses: **R$ 350 a R$ 500/mes**;
 - custos de terceiros pagos pela cliente: dominio, VPS, e-mail, gateway.
 
-Nao embuta taxa do Mercado Pago no seu preco. Ela e custo operacional da loja.
+Nao embuta taxa do gateway no seu preco. Ela e custo operacional da loja.

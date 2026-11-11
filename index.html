@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Meu Mimo Digital — Presentes & Lembranças Digitais Especiais</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -735,7 +735,7 @@
 
   <!-- Top Announcement Bar -->
   <div class="top-bar">
-    <span>NOVIDADE</span> 5% de desconto no Pix com entrega digital automática.
+    <span>NOVIDADE</span> 5% de desconto pagando com Pix.
   </div>
 
   <!-- Header -->
@@ -745,7 +745,7 @@
       
       <div class="search-box">
         <svg viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-        <input type="text" id="searchInput" placeholder="Pesquisar moldes, quadros ou polaroids..." onkeyup="filterProducts()">
+        <input type="text" id="searchInput" placeholder="Pesquisar moldes, quadros ou polaroids..." oninput="applyFilters()">
       </div>
 
       <button class="cart-btn" onclick="toggleCart()">
@@ -785,8 +785,8 @@
           <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
         </div>
         <div>
-          <div class="trust-title">Download Imediato</div>
-          <div class="trust-sub">Link por e-mail após a compra</div>
+          <div class="trust-title">Entrega Digital</div>
+          <div class="trust-sub">Liberada após o pagamento</div>
         </div>
       </div>
       <div class="trust-item">
@@ -804,7 +804,7 @@
         </div>
         <div>
           <div class="trust-title">Pagamento Seguro</div>
-          <div class="trust-sub">Pix via Mercado Pago</div>
+          <div class="trust-sub">Pague com Pix</div>
         </div>
       </div>
       <div class="trust-item">
@@ -939,7 +939,7 @@
         <div class="faq-answer-wrapper">
           <div class="faq-answer-inner">
             <div class="faq-answer">
-              Assim que o pagamento Pix for confirmado pelo sistema, o link de acesso ao modelo editável no Canva é disponibilizado imediatamente na tela e enviado para o seu e-mail cadastrado.
+              Assim que o pagamento é confirmado, os links dos seus arquivos são liberados na página do pedido. Guarde o link dessa página: ele é o seu acesso aos arquivos.
             </div>
           </div>
         </div>
@@ -1107,15 +1107,18 @@
       }
 
       let total = 0;
-      container.innerHTML = cart.map(item => {
+      const qtyStyle = 'width:28px;height:28px;border-radius:50%;border:1.5px solid var(--border);background:white;font-weight:700;cursor:pointer;';
+      container.innerHTML = cart.map((item, index) => {
         total += item.price * item.qty;
         return `
           <div class="cart-item-row">
-            <img src="${item.img}" alt="${item.title}">
+            <img src="${item.img}" alt="">
             <div style="flex-grow:1;">
               <div style="font-weight:700; font-size:0.9rem;">${item.title}</div>
               <div style="color:var(--primary-dark); font-weight:800; font-size:0.85rem;">${item.qty}x R$ ${item.price.toFixed(2).replace('.', ',')}</div>
             </div>
+            <button type="button" aria-label="Diminuir" style="${qtyStyle}" onclick="changeQty(${index}, -1)">&minus;</button>
+            <button type="button" aria-label="Aumentar" style="${qtyStyle}" onclick="changeQty(${index}, 1)">+</button>
           </div>
         `;
       }).join('');
@@ -1123,33 +1126,35 @@
       totalPrice.textContent = `R$ ${total.toFixed(2).replace('.', ',')}`;
     }
 
+    function changeQty(index, delta) {
+      if (!cart[index]) return;
+      cart[index].qty += delta;
+      if (cart[index].qty <= 0) cart.splice(index, 1);
+      renderCart();
+    }
+
     function checkoutMock() {
       if (cart.length === 0) return alert('Seu carrinho está vazio!');
-      alert('Modo Demonstração: Em ambiente de produção, este botão gera o QR Code Pix via Mercado Pago!');
+      alert('Prévia de demonstração: na loja publicada, este botão leva ao checkout e gera o Pix do pedido.');
     }
+
+    let activeCategory = 'all';
+    const normalize = text => text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
     function setCategory(category, btn) {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-
-      document.querySelectorAll('.product-card').forEach(card => {
-        if (category === 'all' || card.dataset.category === category) {
-          card.style.display = 'flex';
-        } else {
-          card.style.display = 'none';
-        }
-      });
+      activeCategory = category;
+      applyFilters();
     }
 
-    function filterProducts() {
-      const query = document.getElementById('searchInput').value.toLowerCase();
+    // Busca e categoria valem juntas.
+    function applyFilters() {
+      const query = normalize(document.getElementById('searchInput').value.trim());
       document.querySelectorAll('.product-card').forEach(card => {
-        const name = card.dataset.name.toLowerCase();
-        if (name.includes(query)) {
-          card.style.display = 'flex';
-        } else {
-          card.style.display = 'none';
-        }
+        const matchCategory = activeCategory === 'all' || card.dataset.category === activeCategory;
+        const matchQuery = !query || normalize(card.dataset.name + ' ' + card.dataset.category).includes(query);
+        card.style.display = matchCategory && matchQuery ? 'flex' : 'none';
       });
     }
 
@@ -1171,6 +1176,16 @@
     function closeModal() {
       document.getElementById('modalOverlay').classList.remove('open');
     }
+
+    document.addEventListener('keydown', event => {
+      if (event.key !== 'Escape') return;
+      closeModal();
+      document.getElementById('cart-drawer').classList.remove('open');
+      document.getElementById('cart-overlay').classList.remove('open');
+    });
+    document.getElementById('modalOverlay').addEventListener('click', event => {
+      if (event.target.id === 'modalOverlay') closeModal();
+    });
 
     function toggleFaq(itemEl) {
       const isActive = itemEl.classList.contains('active');

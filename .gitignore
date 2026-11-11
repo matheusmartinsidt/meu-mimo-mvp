@@ -2,6 +2,9 @@
 node_modules/
 npm-debug.log*
 
+# dados gerados em execucao (o seed versionado e data/store.json)
 data/uploads/
+data/db.local.json
+data/db.local.json.tmp
 
 *.zip

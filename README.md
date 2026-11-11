@@ -1,145 +1,101 @@
-# Meu Mimo MVP
+# Meu Mimo Digital
 
-MVP de loja propria para produtos digitais, sem WordPress e sem construtor visual.
+Loja própria para produtos digitais (moldes e arquivos editáveis no Canva), sem WordPress e sem construtor visual. Node.js puro + PostgreSQL.
 
-## O que ja existe
+## O que está pronto
 
-- Home com estetica delicada inspirada na loja atual.
-- Catalogo de produtos digitais.
-- Pagina de produto com galeria, preco e descricao.
-- Carrinho no navegador.
-- Checkout MVP com criacao de pedido.
-- Pix Mercado Pago quando `MERCADO_PAGO_ACCESS_TOKEN` estiver configurado.
-- Painel interno com login e 2FA opcional.
-- Cadastro simples de produto pelo painel.
-- Endpoint de webhook para Mercado Pago.
-- Dockerfile e Docker Compose.
+**Loja**
+- Home com busca, filtro por categoria, depoimentos, FAQ e newsletter.
+- Página de produto com galeria e produtos relacionados.
+- Carrinho (gaveta lateral e página) com quantidade, remoção e desconto Pix.
+- Checkout com validação de nome, e-mail e WhatsApp no navegador e no servidor.
+- Página do pedido: mostra o Pix, atualiza sozinha quando o pagamento é confirmado e libera os arquivos. O link dessa página é o acesso do cliente.
 
-## Rodar localmente
+**Painel interno** (host/porta separados)
+- Login com senha, 2FA opcional (TOTP), limite de tentativas e sessão de 8 horas.
+- Pedidos: filtro por status, mudança de status, link do cliente, contato por WhatsApp.
+- Produtos: cadastro, edição, upload de imagem, ocultar/publicar.
+- Dados da loja: nome, contatos, desconto Pix, textos de "quem somos", FAQ e privacidade.
 
-```bash
-docker compose up --build
-```
+**Pagamento** — a loja já vende sem gateway e está preparada para receber um:
+- `manual` (padrão): com `PIX_KEY` definida, gera Pix copia e cola + QR Code com o valor do pedido, direto para a conta da loja, sem taxa. A confirmação é feita no painel (marcar como **Pago**).
+- `mercado-pago`: Pix com confirmação automática por webhook assinado.
+- Outro gateway: basta um arquivo novo em `src/payments/` (contrato documentado em `src/payments/index.js`). Comparativo em [`docs/GATEWAYS.md`](docs/GATEWAYS.md).
 
-Depois abra:
-
-```text
-http://localhost:3000
-```
-
-Painel interno separado:
-
-```text
-http://localhost:3001
-```
-
-Credenciais padrao do `docker-compose.yml`:
-
-```text
-E-mail: admin@meumimo.local
-Senha: troque-essa-senha
-2FA local: cadastre o segredo JBSWY3DPEHPK3PXP no Google Authenticator, Authy ou 1Password.
-```
-
-Troque a senha e o segredo 2FA antes de colocar qualquer versao no ar.
-
-## Comandos uteis
+## Rodar
 
 ```bash
-# subir em segundo plano
+cp .env.example .env        # ajuste senha, SESSION_SECRET e PIX_KEY
 docker compose up --build -d
-
-# ver logs
-docker compose logs -f meu-mimo
-
-# verificar saude do app
-curl http://localhost:3000/health
-
-# parar o container
-docker compose down
 ```
 
-O arquivo `.env` ja vem preenchido para rodar localmente. Para publicar,
-copie os valores de `.env.example`, troque `BASE_URL`, `ADMIN_PASSWORD` e
-`ADMIN_2FA_SECRET`, e adicione as credenciais reais do Mercado Pago.
+- Loja: http://localhost:3000
+- Painel: http://localhost:3001 (credenciais de `ADMIN_EMAIL` / `ADMIN_PASSWORD`)
 
-## Variaveis importantes
-
-```env
-APP_PORT=3000
-ADMIN_PORT=3001
-PORT=3000
-HOST=0.0.0.0
-STORE_NAME=Meu Mimo Digital
-ADMIN_EMAIL=admin@meumimo.local
-ADMIN_PASSWORD=troque-essa-senha
-ADMIN_2FA_REQUIRED=true
-ADMIN_2FA_SECRET=gere-um-segredo-base32-unico
-BASE_URL=https://seudominio.com.br
-PUBLIC_STORE_URL=https://seudominio.com.br
-ADMIN_PATH=/
-ADMIN_HOSTS=admin.seudominio.com.br
-MERCADO_PAGO_ACCESS_TOKEN=
-MERCADO_PAGO_WEBHOOK_SECRET=
-```
-
-## Mercado Pago Pix
-
-Para ativar Pix real, preencha no `.env`:
-
-```env
-MERCADO_PAGO_ACCESS_TOKEN=APP_USR-...
-PUBLIC_STORE_URL=https://seudominio.com.br
-```
-
-O checkout cria um pagamento Pix via API do Mercado Pago e mostra QR Code, copia-e-cola e link de pagamento. O webhook fica em:
-
-```text
-https://seudominio.com.br/api/webhooks/mercado-pago
-```
-
-Em desenvolvimento local, o Mercado Pago nao consegue chamar `localhost`. Para testar webhook no seu PC, use um tunel publico como ngrok ou Cloudflare Tunnel e coloque essa URL em `PUBLIC_STORE_URL`.
-
-## Proximos passos tecnicos
-
-1. Trocar o armazenamento JSON por PostgreSQL.
-2. Validar assinatura do webhook do Mercado Pago.
-3. Criar area do cliente com login e "Meus downloads".
-4. Enviar e-mail transacional com link do produto aprovado.
-5. Armazenar arquivos digitais em Cloudflare R2 ou S3.
-6. Criar backups automaticos.
-7. Adicionar painel para editar banners, textos e politicas.
-8. Adicionar logs, rate limit e monitoramento.
-
-## Observacao de seguranca
-
-Este MVP serve para validar layout, fluxo comercial e proposta. Para producao,
-nao use JSON como banco principal e nao entregue produtos digitais sem confirmar
-o pagamento consultando a API oficial do Mercado Pago no backend.
-
-## PostgreSQL local
-
-O Docker Compose sobe dois containers:
-
-- `meu-mimo-mvp`: aplicacao Node.
-- `meu-mimo-db`: banco PostgreSQL 16.
-
-Na primeira inicializacao, o app cria as tabelas e importa os produtos de `data/store.json` como seed.
-
-Comandos uteis:
+Sem Docker (dados em `data/db.local.json`, sem PostgreSQL):
 
 ```bash
-# subir app + banco
-docker compose up --build -d
-
-# ver status
-docker compose ps
-
-# abrir SQL no banco
-docker compose exec db psql -U meu_mimo -d meu_mimo
-
-# listar produtos direto no banco
-docker compose exec db psql -U meu_mimo -d meu_mimo -c "SELECT slug, name, price FROM products;"
+npm install
+ADMIN_EMAIL=admin@meumimo.local ADMIN_PASSWORD=uma-senha ADMIN_HOSTS=127.0.0.1:3000 npm start
+# loja em http://localhost:3000 e painel em http://127.0.0.1:3000
+# (o painel responde só pelo host listado em ADMIN_HOSTS)
 ```
 
-Os dados do banco ficam persistidos no volume Docker `meu-mimo-mvp_postgres_data`.
+## Testes
+
+```bash
+npm test
+# inclui o caminho PostgreSQL quando houver um banco descartável:
+TEST_DATABASE_URL=postgres://usuario:senha@localhost:5432/banco_teste npm test
+```
+
+Os testes cobrem validações, cálculo do pedido, Pix (CRC e payload), TOTP, sessão, fluxo completo de compra, painel e o webhook do Mercado Pago (com a API simulada).
+
+## Variáveis de ambiente
+
+Todas estão comentadas em [`.env.example`](.env.example). As essenciais para publicar:
+
+| Variável | Para quê |
+|---|---|
+| `PUBLIC_STORE_URL` | URL pública da loja (links de pedido, e-mails, webhooks). |
+| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Login do painel. Sem elas o login fica desativado. |
+| `SESSION_SECRET` | Assina a sessão do painel. Use um valor longo e aleatório. |
+| `ADMIN_HOSTS` | Host(s) em que o painel responde, ex.: `admin.seudominio.com.br`. |
+| `ADMIN_2FA_SECRET` | Segredo base32 do autenticador (ativa o 2FA). |
+| `TRUST_PROXY` | `true` atrás de Nginx/Caddy/Cloudflare (IP real e HTTPS). |
+| `PAYMENT_PROVIDER` | `manual` ou `mercado-pago`. |
+| `PIX_KEY`, `PIX_MERCHANT_NAME`, `PIX_MERCHANT_CITY` | Pix do modo manual. |
+| `MERCADO_PAGO_ACCESS_TOKEN`, `MERCADO_PAGO_WEBHOOK_SECRET` | Credenciais do Mercado Pago. |
+| `RESEND_API_KEY`, `EMAIL_FROM` | E-mails de "pedido recebido" e "pagamento confirmado" (opcional). |
+| `DATABASE_URL` | PostgreSQL. Sem ela, os dados ficam em arquivo (só para desenvolvimento). |
+
+## Publicar: checklist
+
+1. Domínio com HTTPS e proxy reverso apontando loja e painel (`admin.`) para o container; `TRUST_PROXY=true`.
+2. Trocar `ADMIN_PASSWORD`, definir `SESSION_SECRET` e ativar o 2FA.
+3. Definir `PIX_KEY` (modo manual) ou as credenciais do gateway escolhido.
+4. No painel, conferir o link de entrega de cada produto (o painel avisa quando falta).
+5. Backup do volume do PostgreSQL e do volume de uploads.
+
+Webhook do Mercado Pago: `https://seudominio.com.br/api/webhooks/mercado-pago`. O app valida a assinatura, ignora o conteúdo recebido e consulta o pagamento na API oficial antes de liberar a entrega.
+
+## Estrutura
+
+```
+src/server.js        rotas HTTP
+src/views.js         páginas (HTML renderizado no servidor)
+src/validation.js    validações de entrada
+src/security.js      sessão, 2FA, limite de tentativas
+src/store.js         PostgreSQL (produção) ou arquivo JSON (desenvolvimento)
+src/payments/        provedores de pagamento
+src/mailer.js        e-mail transacional opcional
+src/public/          JS e CSS do navegador
+data/store.json      dados iniciais (seed)
+index.html           prévia estática do layout (GitHub Pages), sem checkout real
+```
+
+## Limites conhecidos
+
+- O limite de tentativas fica em memória: vale para uma única instância do app.
+- Os arquivos digitais são links externos (Canva/Drive) liberados após o pagamento; não há hospedagem própria de arquivos.
+- Não há área de cliente com login: o acesso é pelo link do pedido.
